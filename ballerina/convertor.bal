@@ -28,7 +28,7 @@ public isolated class Converter {
 
     public isolated function toJson(string copybookData, string? targetRecordName = ()) returns map<json>|error {
         lock {
-            check self.validateTypeDefintion(targetRecordName);
+            check self.validateTargetRecordName(targetRecordName);
             CopybookReader copybookReader = new (copybookData.iterator(), self.schema, targetRecordName);
             self.schema.accept(copybookReader);
             DataCoercer dataCoercer = new (self.schema);
@@ -39,18 +39,22 @@ public isolated class Converter {
     public isolated function toCopybook(record {} input, string? targetRecordName = ()) returns string|error {
         readonly & map<json> readonlyJson = check input.cloneWithType();
         lock {
-            check self.validateTypeDefintion(targetRecordName);
+            check self.validateTargetRecordName(targetRecordName);
             JsonReader jsonReader = new (self.schema, targetRecordName);
             jsonReader.visitSchema(self.schema, readonlyJson);
             return jsonReader.getValue();
         }
     }
 
-    private isolated function validateTypeDefintion(string? targetRecordName) returns error? {
-        if targetRecordName is () {
-            return;
-        }
+    private isolated function validateTargetRecordName(string? targetRecordName) returns error? {
         lock {
+            if targetRecordName is () {
+                if self.schema.getTypeDefinitions().length() == 1 {
+                    return;
+                }
+                return error Error("The copybook schema has multiple record definitions. "
+                    + "The targetRecordName must not be nil");
+            }
             foreach Node node in self.schema.getTypeDefinitions() {
                 if node.getName() == targetRecordName {
                     return;
