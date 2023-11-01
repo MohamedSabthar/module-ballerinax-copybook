@@ -122,3 +122,15 @@ isolated function decimalToString(decimal value) returns string {
 isolated function externToString(Node node) returns string = @java:Method {
     'class: "io.ballerina.lib.convertor.Utils"
 } external;
+
+isolated function getTypeDefinition(Schema schema, string? targetRecordName) returns Node {
+    if targetRecordName is () {
+        return schema.getTypeDefinitions()[0];
+    }
+    foreach Node node in schema.getTypeDefinitions() {
+        if targetRecordName == node.getName() {
+            return node;
+        }
+    }
+    panic error(string `Unable to find targert record ${targetRecordName}`);
+}

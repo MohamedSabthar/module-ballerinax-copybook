@@ -22,14 +22,16 @@ class JsonReader {
     private final string[] path = [];
     private final map<string> processedItemValues = {};
     private final map<Node> redefinedItems;
+    private final string? targetRecordName;
 
-    isolated function init(Schema schema) {
+    isolated function init(Schema schema, string? targetRecordName) {
         self.redefinedItems = schema.getRedefinedItems();
+        self.targetRecordName = targetRecordName;
     }
 
     isolated function visitSchema(Schema schema, anydata data = ()) {
         self.path.push(ROOT_JSON_PATH);
-        Node typedef = schema.getTypeDefinitions()[0];
+        Node typedef = getTypeDefinition(schema, self.targetRecordName);
         if data !is map<json> {
             self.errors.push(error Error(string `Invalid value ${data.toString()} found at ${self.getPath()}`));
             _ = self.path.pop();

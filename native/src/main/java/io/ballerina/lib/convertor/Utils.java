@@ -188,10 +188,10 @@ public final class Utils {
         return schema.getRedefinedItems().containsKey(name.getValue());
     }
 
-    public static Object fromCopybook(Environment env, BObject convertor, BString copybookData, BTypedesc typedesc) {
+    public static Object fromCopybook(Environment env, BObject convertor, BString copybookData, Object targetRecordName, BTypedesc typedesc) {
         Future balFuture = env.markAsync();
         ExecutionCallback callback = new ExecutionCallback(balFuture);
-        Object[] paramFeed = {copybookData, true, typedesc, true};
+        Object[] paramFeed = {copybookData, true, typedesc, true, targetRecordName, true};
         env.getRuntime().invokeMethodAsyncConcurrently(convertor, TO_RECORD_METHOD_NAME, null, null, callback, null,
                                                        PredefinedTypes.TYPE_NULL, paramFeed);
         return null;
