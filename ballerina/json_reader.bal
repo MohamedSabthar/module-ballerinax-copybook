@@ -206,7 +206,6 @@ class JsonReader {
     private isolated function handleDecimalValue(decimal input, DataItem dataItem) returns string|error {
         // TODO: skipped decimal with V, implment seperately for decimal containing V
         // TODO: handle special case Z for fraction
-        // TODO: handle S9V9(0)
         if !dataItem.isDecimal() && !dataItem.isNumeric() {
             string expectedType = dataItem.isNumeric() ? "int" : "string";
             return error Error(string `Found invalid value ${input.toString()} at ${self.getPath()}. A '${expectedType}' value is expected`);
