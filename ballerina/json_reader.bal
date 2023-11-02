@@ -90,7 +90,11 @@ class JsonReader {
             }
             self.visitAllowedRedefiningItems[redefiningItemNameWithValue] = ();
             // Assuming that all the redefined fields/groups share identical JSON content.
-            targetChild = findChildByName(parent, redefiningItemNameWithValue);
+            Node? redifiningItem = findChildByName(parent, redefiningItemNameWithValue);
+            if redifiningItem is () {
+                return;
+            }
+            targetChild = redifiningItem;
         }
 
         if targetChild is GroupItem {

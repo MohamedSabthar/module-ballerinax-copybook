@@ -55,7 +55,6 @@ public class SchemaBuilder implements CopyBookVisitor<Node> {
     private final Schema schema = new Schema();
     private GroupItem possibleParent;
     private final Set<String> redefinedItemNames = new HashSet<>();
-    private final List<String> errors = new ArrayList<>();
 
     public Schema getSchema() {
         return this.schema;
@@ -115,7 +114,6 @@ public class SchemaBuilder implements CopyBookVisitor<Node> {
             return null;
         }
 
-        // TODO: fix redefine clause tryout
         boolean redefines = ctx.dataDescriptionEntryClauses().dataRedefinesClause(0) != null;
         String redefinedItemName = null;
         if (redefines) {

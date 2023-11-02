@@ -160,11 +160,28 @@ isolated function getRedefiningItemNames(GroupItem parent, string redefinedItemN
     return redefiningItems;
 }
 
-isolated function findChildByName(GroupItem parent, string childName) returns Node {
+isolated function findChildByName(GroupItem parent, string childName) returns Node? {
     foreach Node child in parent.getChildren() {
         if child.getName() == childName {
             return child;
         }
     }
-    panic error(string `Invalid child name ${childName} provided`);
+    return;
+}
+
+isolated function findNodeByName(Node parent, string name) returns Node? {
+    if parent is Schema {
+        foreach var typedef in parent.getTypeDefinitions() {
+            if typedef.getName() == name {
+                return typedef;
+            }
+        }
+    }
+    if parent is GroupItem {
+        return findChildByName(parent, name);
+    }
+    if parent is DataItem && name == parent.getName() {
+        return parent;
+    }
+    return;
 }

@@ -31,8 +31,8 @@ public isolated class Converter {
             check self.validateTargetRecordName(targetRecordName);
             CopybookReader copybookReader = new (copybookData.iterator(), self.schema, targetRecordName);
             self.schema.accept(copybookReader);
-            DataCoercer dataCoercer = new (self.schema);
-            return dataCoercer.coerceData(copybookReader.getValue()).clone();
+            DataCoercer dataCoercer = new (self.schema, targetRecordName);
+            return dataCoercer.coerce(copybookReader.getValue()).clone();
         }
     }
 
