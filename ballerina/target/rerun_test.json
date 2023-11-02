@@ -1,1 +1,1 @@
-{"copybook":{"testNames":[],"testModuleNames":{},"subTestNames":{}}}
+{"copybook":{"testNames":["testConvertor"],"testModuleNames":{"testConvertor":"copybook"},"subTestNames":{}}}
