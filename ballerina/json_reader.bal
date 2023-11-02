@@ -89,6 +89,7 @@ class JsonReader {
                 return;
             }
             self.visitAllowedRedefiningItems[redefiningItemNameWithValue] = ();
+            // Assuming that all the redefined fields/groups share identical JSON content.
             targetChild = findChildByName(parent, redefiningItemNameWithValue);
         }
 

@@ -6,10 +6,9 @@ isolated function testConvertor() returns error? {
     Converter convertor = check new("mainfram.cob");
     string originalContent = check io:fileReadString("resp.txt");
 
-    // map<json> val = check convertor.toJson(originalContent);
-    // check io:fileWriteJson("result.json", val);
-    json val = check io:fileReadJson("result.json");
-    string recreatedContent = check convertor.toCopybook(<map<json>>val);
+    map<json> val = check convertor.toJson(originalContent);
+    string recreatedContent = check convertor.toCopybook(val);
+    
     check io:fileWriteString("red.txt", recreatedContent);
     test:assertEquals(recreatedContent, originalContent);
 }
