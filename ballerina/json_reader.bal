@@ -79,12 +79,8 @@ class JsonReader {
         if isRedifiningItem(child) {
             return;
         }
-        string[] redefiningItems = getRedefiningItemNames(parent, child.getName());
-        if !value.hasKey(child.getName()) && redefiningItems == [] {
-            self.value.push("".padEnd(computeSize(child)));
-            return;
-        }
         Node targetChild = child;
+        string[] redefiningItems = getRedefiningItemNames(parent, child.getName());
         string? redefiningItemNameWithValue = ();
         if !value.hasKey(child.getName()) {
             redefiningItemNameWithValue = self.findRedefiningItemNameWithValue(value, redefiningItems);
@@ -92,9 +88,8 @@ class JsonReader {
                 self.value.push("".padEnd(computeSize(child)));
                 return;
             }
-            // Allow to visit this item
             self.visitAllowedRedefiningItems[redefiningItemNameWithValue] = ();
-            targetChild = self.findChildByName(parent, redefiningItemNameWithValue);
+            targetChild = findChildByName(parent, redefiningItemNameWithValue);
         }
 
         if targetChild is GroupItem {
@@ -115,15 +110,6 @@ class JsonReader {
             }
         }
         return;
-    }
-
-    private isolated function findChildByName(GroupItem parent, string childName) returns Node {
-        foreach Node child in parent.getChildren() {
-            if child.getName() == childName {
-                return child;
-            }
-        }
-        panic error(string `Invalid child name ${childName} provided`);
     }
 
     isolated function visitDataItem(DataItem dataItem, anydata data = ()) {

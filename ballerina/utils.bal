@@ -159,3 +159,12 @@ isolated function getRedefiningItemNames(GroupItem parent, string redefinedItemN
     }
     return redefiningItems;
 }
+
+isolated function findChildByName(GroupItem parent, string childName) returns Node {
+    foreach Node child in parent.getChildren() {
+        if child.getName() == childName {
+            return child;
+        }
+    }
+    panic error(string `Invalid child name ${childName} provided`);
+}
