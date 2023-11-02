@@ -48,8 +48,7 @@ class JsonReader {
     }
 
     isolated function visitGroupItem(GroupItem groupItem, anydata data = ()) {
-        // TODO: handle redefined value
-        if groupItem.getRedefinedItemName() is string && !self.visitAllowedRedefiningItems.hasKey(groupItem.getName()) {
+        if isRedifiningItem(groupItem) && !self.visitAllowedRedefiningItems.hasKey(groupItem.getName()) {
             return;
         }
         self.path.push(groupItem.getName());
@@ -77,22 +76,25 @@ class JsonReader {
     }
 
     private isolated function visitChild(GroupItem parent, Node child, map<json> value) {
-        Node targetChild = child;
-        string[] redefinedItems = self.getRedefiningItemNames(parent, targetChild.getName());
-        if !value.hasKey(child.getName()) &&  redefinedItems == [] {
+        if isRedifiningItem(child) {
+            return;
+        }
+        string[] redefiningItems = getRedefiningItemNames(parent, child.getName());
+        if !value.hasKey(child.getName()) && redefiningItems == [] {
             self.value.push("".padEnd(computeSize(child)));
             return;
         }
-        string? redefindItemNameWithValue = ();
+        Node targetChild = child;
+        string? redefiningItemNameWithValue = ();
         if !value.hasKey(child.getName()) {
-            redefindItemNameWithValue =  self.findRedefindItemNameWithValue(value, redefinedItems);
-            if redefindItemNameWithValue is () {
+            redefiningItemNameWithValue = self.findRedefiningItemNameWithValue(value, redefiningItems);
+            if redefiningItemNameWithValue is () {
                 self.value.push("".padEnd(computeSize(child)));
                 return;
             }
             // Allow to visit this item
-            self.visitAllowedRedefiningItems[redefindItemNameWithValue] = ();
-            targetChild = self.findChildByName(parent, redefindItemNameWithValue);
+            self.visitAllowedRedefiningItems[redefiningItemNameWithValue] = ();
+            targetChild = self.findChildByName(parent, redefiningItemNameWithValue);
         }
 
         if targetChild is GroupItem {
@@ -101,28 +103,12 @@ class JsonReader {
             self.visitDataItem(targetChild, value.get(targetChild.getName()));
         }
 
-        if redefindItemNameWithValue is string && self.visitAllowedRedefiningItems.hasKey(redefindItemNameWithValue){
-            _ = self.visitAllowedRedefiningItems.remove(redefindItemNameWithValue);
+        if redefiningItemNameWithValue is string && self.visitAllowedRedefiningItems.hasKey(redefiningItemNameWithValue) {
+            _ = self.visitAllowedRedefiningItems.remove(redefiningItemNameWithValue);
         }
     }
 
-    private isolated function getRedefiningItemNames(GroupItem parent, string redefinedItemName) returns string[] {
-        string[] redefiningItems = [];
-        foreach Node child in parent.getChildren() {
-            boolean isRedefiningItem = false;
-            if child is DataItem {
-                isRedefiningItem = child.getRedefinedItemName() == redefinedItemName;
-            } else if child is GroupItem {
-                isRedefiningItem = child.getRedefinedItemName() == redefinedItemName;
-            }
-            if isRedefiningItem {
-                redefiningItems.push(child.getName());
-            }
-        }
-        return redefiningItems;
-    }
-
-    private isolated function findRedefindItemNameWithValue(map<json> parentValue, string[] redefiningItemdNames) returns string? {
+    private isolated function findRedefiningItemNameWithValue(map<json> parentValue, string[] redefiningItemdNames) returns string? {
         foreach string itemName in redefiningItemdNames {
             if parentValue.hasKey(itemName) {
                 return itemName;
@@ -141,8 +127,7 @@ class JsonReader {
     }
 
     isolated function visitDataItem(DataItem dataItem, anydata data = ()) {
-        // TODO: handle redefined value
-        if dataItem.getRedefinedItemName() is string && !self.visitAllowedRedefiningItems.hasKey(dataItem.getName()) {
+        if isRedifiningItem(dataItem) && !self.visitAllowedRedefiningItems.hasKey(dataItem.getName()) {
             return;
         }
         self.path.push(dataItem.getName());

@@ -134,3 +134,28 @@ isolated function getTypeDefinition(Schema schema, string? targetRecordName) ret
     }
     panic error(string `Unable to find targert record ${targetRecordName}`);
 }
+
+isolated function isRedifiningItem(Node node) returns boolean {
+    if node is DataItem {
+        return node.getRedefinedItemName() != ();
+    } else if node is GroupItem {
+        return node.getRedefinedItemName() != ();
+    }
+    return false;
+}
+
+isolated function getRedefiningItemNames(GroupItem parent, string redefinedItemName) returns string[] {
+    string[] redefiningItems = [];
+    foreach Node child in parent.getChildren() {
+        boolean isRedefiningItem = false;
+        if child is DataItem {
+            isRedefiningItem = child.getRedefinedItemName() == redefinedItemName;
+        } else if child is GroupItem {
+            isRedefiningItem = child.getRedefinedItemName() == redefinedItemName;
+        }
+        if isRedefiningItem {
+            redefiningItems.push(child.getName());
+        }
+    }
+    return redefiningItems;
+}
