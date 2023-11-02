@@ -79,6 +79,9 @@ public class DataItem implements Node {
         if (this.floatingPointLength > 0) {
             sb.append(", \"floatingPointLength\":").append(this.floatingPointLength);
         }
+        if (this.redefinedItemName != null) {
+            sb.append(", \"redefinedItemName\": \"").append(this.redefinedItemName).append("\"");
+        }
         sb.append("}");
         return sb.toString();
     }

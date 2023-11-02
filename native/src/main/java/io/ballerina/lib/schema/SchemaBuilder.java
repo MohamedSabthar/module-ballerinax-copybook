@@ -55,8 +55,7 @@ public class SchemaBuilder implements CopyBookVisitor<Node> {
     private final Schema schema = new Schema();
     private GroupItem possibleParent;
     private final Set<String> redefinedItemNames = new HashSet<>();
-    private final List<String> errors = new ArrayList<>(); // TODO: check for redfinedItems in tree and put errors if
-    // not exisits
+    private final List<String> errors = new ArrayList<>();
 
     public Schema getSchema() {
         return this.schema;

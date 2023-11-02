@@ -62,6 +62,9 @@ public class GroupItem implements Node {
         if (this.occurs > -1) {
             sb.append(", \"occurs\":").append(this.occurs);
         }
+        if (this.redefinedItemName != null) {
+            sb.append(", \"redefinedItemName\": \"").append(this.redefinedItemName).append("\"");
+        }
         sb.append("}");
         return sb.toString();
     }

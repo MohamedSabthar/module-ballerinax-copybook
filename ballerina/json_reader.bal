@@ -20,9 +20,9 @@ class JsonReader {
     private final string[] value = [];
     private final Error[] errors = [];
     private final string[] path = [];
-    private final map<string> processedItemValues = {};
     private final map<Node> redefinedItems;
     private final string? targetRecordName;
+    private final map<()> visitAllowedRedefiningItems = {};
 
     isolated function init(Schema schema, string? targetRecordName) {
         self.redefinedItems = schema.getRedefinedItems();
@@ -49,22 +49,20 @@ class JsonReader {
 
     isolated function visitGroupItem(GroupItem groupItem, anydata data = ()) {
         // TODO: handle redefined value
-        string? redefinedItem = groupItem.getRedefinedItemName();
-        if redefinedItem is string && self.processedItemValues.hasKey(redefinedItem) {
+        if groupItem.getRedefinedItemName() is string && !self.visitAllowedRedefiningItems.hasKey(groupItem.getName()) {
             return;
         }
         self.path.push(groupItem.getName());
-        // int lastValueIndex = self.value.length() == 0 ? 0 : self.value.length() - 1;
 
         int elementCount = groupItem.getElementCount();
         if elementCount < 0 && data is map<json> {
             foreach Node node in groupItem.getChildren() {
-                self.visitChild(node, data);
+                self.visitChild(groupItem, node, data);
             }
         } else if elementCount > 0 && data is map<json>[] {
             foreach map<json> element in data {
                 foreach Node node in groupItem.getChildren() {
-                    self.visitChild(node, element);
+                    self.visitChild(groupItem, node, element);
                 }
             }
             int elementSize = computeSize(groupItem, false);
@@ -75,33 +73,76 @@ class JsonReader {
             self.errors.push(error Error(string `Found an invalid value ${data.toString()} at ${self.getPath()}.` +
                     string `A '${groupItem.getElementCount() < 0 ? "map<json>" : "map<json>[]"}' value is expected`));
         }
-        // TODO: handle redefined value
-        // int currentValueIndex = self.value.length();
-        // string groupValue = string:'join("", ...self.value.slice(lastValueIndex, currentValueIndex));
-        // self.processedItemValues[groupItem.getName()] = groupValue;
-        // if redefinedItem is string {
-        //     // Since we now know the redefind group item value set that as well
-        //     self.processedItemValues[redefinedItem] = groupValue;
-        // }
         _ = self.path.pop();
     }
 
-    private isolated function visitChild(Node child, map<json> value) {
-        if !value.hasKey(child.getName()) {
+    private isolated function visitChild(GroupItem parent, Node child, map<json> value) {
+        Node targetChild = child;
+        string[] redefinedItems = self.getRedefiningItemNames(parent, targetChild.getName());
+        if !value.hasKey(child.getName()) &&  redefinedItems == [] {
             self.value.push("".padEnd(computeSize(child)));
             return;
         }
-        if child is GroupItem {
-            self.visitGroupItem(child, value.get(child.getName()));
-        } else if child is DataItem {
-            self.visitDataItem(child, value.get(child.getName()));
+        string? redefindItemNameWithValue = ();
+        if !value.hasKey(child.getName()) {
+            redefindItemNameWithValue =  self.findRedefindItemNameWithValue(value, redefinedItems);
+            if redefindItemNameWithValue is () {
+                self.value.push("".padEnd(computeSize(child)));
+                return;
+            }
+            // Allow to visit this item
+            self.visitAllowedRedefiningItems[redefindItemNameWithValue] = ();
+            targetChild = self.findChildByName(parent, redefindItemNameWithValue);
         }
+
+        if targetChild is GroupItem {
+            self.visitGroupItem(targetChild, value.get(targetChild.getName()));
+        } else if targetChild is DataItem {
+            self.visitDataItem(targetChild, value.get(targetChild.getName()));
+        }
+
+        if redefindItemNameWithValue is string && self.visitAllowedRedefiningItems.hasKey(redefindItemNameWithValue){
+            _ = self.visitAllowedRedefiningItems.remove(redefindItemNameWithValue);
+        }
+    }
+
+    private isolated function getRedefiningItemNames(GroupItem parent, string redefinedItemName) returns string[] {
+        string[] redefiningItems = [];
+        foreach Node child in parent.getChildren() {
+            boolean isRedefiningItem = false;
+            if child is DataItem {
+                isRedefiningItem = child.getRedefinedItemName() == redefinedItemName;
+            } else if child is GroupItem {
+                isRedefiningItem = child.getRedefinedItemName() == redefinedItemName;
+            }
+            if isRedefiningItem {
+                redefiningItems.push(child.getName());
+            }
+        }
+        return redefiningItems;
+    }
+
+    private isolated function findRedefindItemNameWithValue(map<json> parentValue, string[] redefiningItemdNames) returns string? {
+        foreach string itemName in redefiningItemdNames {
+            if parentValue.hasKey(itemName) {
+                return itemName;
+            }
+        }
+        return;
+    }
+
+    private isolated function findChildByName(GroupItem parent, string childName) returns Node {
+        foreach Node child in parent.getChildren() {
+            if child.getName() == childName {
+                return child;
+            }
+        }
+        panic error(string `Invalid child name ${childName} provided`);
     }
 
     isolated function visitDataItem(DataItem dataItem, anydata data = ()) {
         // TODO: handle redefined value
-        string? redefinedItem = dataItem.getRedefinedItemName();
-        if redefinedItem is string && self.processedItemValues.hasKey(redefinedItem) {
+        if dataItem.getRedefinedItemName() is string && !self.visitAllowedRedefiningItems.hasKey(dataItem.getName()) {
             return;
         }
         self.path.push(dataItem.getName());
@@ -118,12 +159,6 @@ class JsonReader {
                 return;
             }
             self.value.push(primitiveValue);
-            // TODO: handle redefined value
-            self.processedItemValues[dataItem.getName()] = primitiveValue;
-            if redefinedItem is string {
-                // Since we now know the redefind item value set that as well
-                self.processedItemValues[redefinedItem] = primitiveValue;
-            }
         } on fail error e {
             if e is Error {
                 self.errors.push(e);
